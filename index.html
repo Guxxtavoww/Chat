@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+        :root {
+            --main-font: 'Poppins', sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            text-decoration: none;
+            list-style: none;
+            outline: none;
+            border: none;
+            font-family: var(--main-font);
+        }
+        body {
+            max-width: 100vw;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        .app {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+        }
+        .form {
+            position: relative;
+            width: 100%;
+            height: 80px;
+            background: #eaeaea;
+            padding: 1rem;
+            display: grid;
+            place-items: center;
+            grid-template-columns: 3fr 1fr;
+            gap: 1rem;
+        }
+        .msgBx {
+            height: calc(100vh - 80px);
+            overflow-y: scroll;
+            padding: 1rem;
+        }
+        .msgBx .msg {
+            max-width: fit-content;
+            padding: 8px 16px;
+            margin-bottom: 1rem;
+            border: 1px solid #eaeaea;
+        }
+        .msgBx .msg:last-child {
+            margin-bottom: 0;
+        }
+        .input-msg {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 40px;
+        }
+        .form .btn {
+            background: #fff;
+            padding: 1rem 2rem;
+            cursor: pointer;
+            max-width: 100%;
+        }
+        @media screen and (max-width: 510px) {
+            .form {
+                grid-template-columns: 1fr;
+                padding: 1rem 0;
+            }
+            .form .btn {
+                background: #0d0d0d;
+                color: #fff;
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+    <title>Chat</title>
+</head>
+<body>
+    <div class="app">
+        <ul class="msgBx" id="msgs"></ul>
+        <form action="/" class="form" id="form">
+            <input type="text" autocomplete="off" class="input-msg" id="input-msg" placeholder="Digite sua Mensagem">
+            <button class="btn">Enviar</button>
+        </form>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket = io();
+
+        const msgBx = document.querySelector('#msgs');
+        const form = document.querySelector('#form');
+        const input_msg = document.querySelector('#input-msg');
+
+        let nome = prompt('Qual é o seu nome ?');
+
+        socket.emit('new user', nome);
+
+        socket.on('new user', data => { 
+            if(data.success) {
+                alert(`Bem vindo ao chat ${nome ? nome : 'Não declarado'}`)
+            } else {
+                alert('Já existe um usuário com esse nome');
+                window.location.href = "/";
+            }
+        });
+
+        form.addEventListener('submit', e => {
+            e.preventDefault();
+            if(input_msg.value) {
+                socket.emit('chat message', { msg: input_msg.value, nome: nome }); //cria um evento que pode ser recuperado no back-end
+                input_msg.value = '';
+                msgBx.scrollTop = msgBx.scrollHeight;
+                input_msg.focus();
+            }
+        });
+        socket.on('chat message', obj => {
+            if(obj.nome === nome) {
+                let item = document.createElement('li');
+                item.classList = 'msg';
+                item.style.background = '#eaeaea';
+                item.textContent = `${obj.nome}: ${obj.msg}`;
+                msgBx.appendChild(item);
+            } else {
+                let item = document.createElement('li');
+                item.classList = 'msg';
+                item.textContent = `${obj.nome}: ${obj.msg}`;
+                msgBx.appendChild(item);
+            }
+        });
+    </script>
+</body>
+</html>
